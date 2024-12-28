@@ -12,19 +12,6 @@
 
 #define LOG 1
 
-/*
-END BYTE COMMAND
-\x01	Keep Alive
-\x02	Kill Connection
-
-
-*/
-
-static enum cmdByte {
-	keep_alive = '\x01',
-	kill_conn = '\x02'
-};
-
 int send_command_to_server(const SOCKET& connection, std::string msg) {
 	#if LOG
 	std::cout << "Sending '" << msg << "' to server\n";
@@ -81,30 +68,19 @@ int main() {
 	std::cout << "Listening for connection\n";
 	#endif
 
-	listen(ListenSocket, SOMAXCONN);
-	SOCKET accepted = accept(ListenSocket, NULL, NULL);
 
 	std::string msg;
 
-	msg = "echo hello world!";
-	msg.push_back((char)keep_alive);
-	err = send_command_to_server(accepted, msg);
+	while (1) {
+		listen(ListenSocket, SOMAXCONN);
+		SOCKET accepted = accept(ListenSocket, NULL, NULL);
 
-	msg = "echo second message";
-	msg.push_back((char)keep_alive);
-	err = send_command_to_server(accepted, msg);
-
-	msg = "systeminfo";
-	msg.push_back((char)kill_conn);
-	err = send_command_to_server(accepted, msg);
-
-	closesocket(accepted);
-
-	if (err) {
-		std::cout << "Error sending command to server\n";
-		_getch();
-		return 1;
+		std::cout << "Command: "; std::getline(std::cin, msg);
+		send_command_to_server(accepted, msg);
+		closesocket(accepted);
 	}
+
+
 
 
 	WSACleanup();
