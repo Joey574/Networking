@@ -2,6 +2,7 @@
 #include <ws2tcpip.h> 
 #include <iostream>
 #include <conio.h>
+#include <string>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -19,12 +20,17 @@ END BYTE COMMAND
 
 */
 
-int send_command_to_server(const SOCKET& connection, const char* msg, size_t len) {
+static enum cmdByte {
+	keep_alive = '\x01',
+	kill_conn = '\x02'
+};
+
+int send_command_to_server(const SOCKET& connection, std::string msg) {
 	#if LOG
-	std::cout << "Sending '" << std::string(msg, len - 1) << "' to server\n";
+	std::cout << "Sending '" << msg << "' to server\n";
 	#endif
 
-	int err = send(connection, msg, len, 0);
+	int err = send(connection, &msg[0], msg.length(), 0);
 
 	if (err == SOCKET_ERROR) {
 		return 1;
@@ -50,8 +56,12 @@ int setup_server(sockaddr_in& server, SOCKET& ListenSocket) {
 	return 0;
 }
 
-int main() {
+void init() {
 	std::cout << "Control Server:\n";
+}
+
+int main() {
+	init();
 
 	WSADATA wsaData;
 	int err = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -62,6 +72,7 @@ int main() {
 	err = setup_server(server, ListenSocket);
 	if (err) {
 		std::cout << "Error setting up server\n";
+		_getch();
 		return 1;
 	}
 
@@ -73,18 +84,25 @@ int main() {
 	listen(ListenSocket, SOMAXCONN);
 	SOCKET accepted = accept(ListenSocket, NULL, NULL);
 
-	const char* msgA = "echo hello world!\x01";
-	const char* msgB = "echo second message\x01";
-	const char* msgC = "systeminfo\x02";
+	std::string msg;
 
-	err = send_command_to_server(accepted, msgA, strlen(msgA));
-	err = send_command_to_server(accepted, msgB, strlen(msgB));
-	err = send_command_to_server(accepted, msgC, strlen(msgC));
+	msg = "echo hello world!";
+	msg.push_back((char)keep_alive);
+	err = send_command_to_server(accepted, msg);
+
+	msg = "echo second message";
+	msg.push_back((char)keep_alive);
+	err = send_command_to_server(accepted, msg);
+
+	msg = "systeminfo";
+	msg.push_back((char)kill_conn);
+	err = send_command_to_server(accepted, msg);
 
 	closesocket(accepted);
 
 	if (err) {
 		std::cout << "Error sending command to server\n";
+		_getch();
 		return 1;
 	}
 

