@@ -12,18 +12,26 @@
 
 #define LOG 1
 
-int send_command_to_server(const SOCKET& connection, std::string msg) {
+std::string send_command_to_server(const SOCKET& connection, std::string msg) {
 	#if LOG
 	std::cout << "Sending '" << msg << "' to server\n";
 	#endif
 
-	int err = send(connection, &msg[0], msg.length(), 0);
+	int bytes = send(connection, &msg[0], msg.length(), 0);
 
-	if (err == SOCKET_ERROR) {
-		return 1;
+	if (bytes == SOCKET_ERROR) {
+		return "ERROR\n";
 	}
 
-	return 0;
+	char recvbuf[BUF_LEN]; ZeroMemory(recvbuf, BUF_LEN);
+	std::string result;
+
+	while (recv(connection, recvbuf, BUF_LEN, 0) > 0) {
+		result += recvbuf;
+		ZeroMemory(recvbuf, BUF_LEN);
+	}
+
+	return result;
 }
 
 int setup_server(sockaddr_in& server, SOCKET& ListenSocket) {
@@ -76,11 +84,11 @@ int main() {
 		SOCKET accepted = accept(ListenSocket, NULL, NULL);
 
 		std::cout << "Command: "; std::getline(std::cin, msg);
-		send_command_to_server(accepted, msg);
+		std::string rs = send_command_to_server(accepted, msg);
 		closesocket(accepted);
+
+		std::cout << "Result:\n" << rs << "\n";
 	}
-
-
 
 
 	WSACleanup();

