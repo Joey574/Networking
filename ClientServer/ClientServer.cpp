@@ -7,8 +7,8 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define BUF_LEN 512
-#define DEF_PORT 27015
 
+#define DEF_PORT 28015
 #define SERVER_IP "127.0.0.1"
 
 #define LOG 0
