@@ -11,7 +11,7 @@
 #define DEF_PORT 28015
 #define SERVER_IP "127.0.0.1"
 
-#define LOG 0
+#define LOG 1
 
 
 void execute_command_from_server(const SOCKET& connection, const sockaddr_in& server) {
@@ -36,7 +36,7 @@ void execute_command_from_server(const SOCKET& connection, const sockaddr_in& se
 }
 
 int main() {
-	std::cout << "Client Server:\n";
+	std::cout << "Bot Server:\n";
 
 	WSADATA wsaData;
 	int err = WSAStartup(MAKEWORD(2, 2), &wsaData);
