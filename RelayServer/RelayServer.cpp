@@ -59,6 +59,10 @@ void botConnection() {
 			memset(recvbuf, 0, 512);
 		}
 
+		#if LOG
+		std::cout << "-- CACHED RESPONSES --\n" << returnData << "\n-- END CACHED RESPONSES --\n";
+		#endif
+
 		closesocket(con);
 	}
 }
